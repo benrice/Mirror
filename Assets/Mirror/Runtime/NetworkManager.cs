@@ -66,10 +66,9 @@ namespace Mirror
 
         // batching from server to client.
         // fewer transport calls give us significantly better performance/scale.
-        // batch interval is 0 by default, meaning that we send immediately.
-        // (useful to run tests without waiting for intervals too)
-        [Tooltip("Server can batch messages up to Transport.GetMaxPacketSize to significantly reduce transport calls and improve performance/scale./nNote that this increases latency./n0 means send immediately.")]
-        public float serverBatchInterval = 0.010f;
+        // if batch interval is 0, then we only batch until the Update() call
+        [Tooltip("Server can batch messages up to Transport.GetMaxPacketSize to significantly reduce transport calls and improve performance/scale./nIf batch interval is 0, then we only batch until the Update() call. Otherwise we batch until interval elapsed (note that this increases latency).")]
+        public float serverBatchInterval = 0;
 
         /// <summary>
         /// The scene to switch to when offline.

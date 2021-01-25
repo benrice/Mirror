@@ -59,8 +59,7 @@ namespace Mirror
 
         // batching from server to client.
         // fewer transport calls give us significantly better performance/scale.
-        // batch interval is 0 by default, meaning that we send immediately.
-        // (useful to run tests without waiting for intervals too)
+        // if batch interval is 0, then we only batch until the Update() call.
         public static float batchInterval = 0;
 
         /// <summary>

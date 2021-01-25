@@ -86,24 +86,21 @@ namespace Mirror
             // validate packet size first.
             if (ValidatePacketSize(segment, channelId))
             {
-                // batching?
-                if (batchInterval > 0)
+                // always batch!
+                // (even if interval == 0, in which case we flush in Update())
+                //
+                // if batch would become bigger than MaxPacketSize for this
+                // channel then send out the previous batch first
+                Batch batch = GetBatchForChannelId(channelId);
+                int max = Transport.activeTransport.GetMaxPacketSize(channelId);
+                if (batch.writer.Position + segment.Count > max)
                 {
-                    // if batch would become bigger than MaxPacketSize for this
-                    // channel then send out the previous batch first
-                    Batch batch = GetBatchForChannelId(channelId);
-                    int max = Transport.activeTransport.GetMaxPacketSize(channelId);
-                    if (batch.writer.Position + segment.Count > max)
-                    {
-                        //UnityEngine.Debug.LogWarning($"sending batch {batch.writer.Position} / {max} after full for segment={segment.Count} for connectionId={connectionId}");
-                        SendBatch(channelId, batch);
-                    }
-
-                    // now add segment to batch
-                    batch.writer.WriteBytes(segment.Array, segment.Offset, segment.Count);
+                    //UnityEngine.Debug.LogWarning($"sending batch {batch.writer.Position} / {max} after full for segment={segment.Count} for connectionId={connectionId}");
+                    SendBatch(channelId, batch);
                 }
-                // otherwise send directly (for tests etc.)
-                Transport.activeTransport.ServerSend(connectionId, channelId, segment);
+
+                // now add segment to batch
+                batch.writer.WriteBytes(segment.Array, segment.Offset, segment.Count);
             }
         }
 
