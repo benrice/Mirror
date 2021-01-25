@@ -64,6 +64,13 @@ namespace Mirror
         [Tooltip("Server Update frequency, per second. Use around 60Hz for fast paced games like Counter-Strike to minimize latency. Use around 30Hz for games like WoW to minimize computations. Use around 1-10Hz for slow paced games like EVE.")]
         public int serverTickRate = 30;
 
+        // batching from server to client.
+        // fewer transport calls give us significantly better performance/scale.
+        // batch interval is 0 by default, meaning that we send immediately.
+        // (useful to run tests without waiting for intervals too)
+        [Tooltip("Server can batch messages up to Transport.GetMaxPacketSize to significantly reduce transport calls and improve performance/scale./nNote that this increases latency./n0 means send immediately.")]
+        public float serverBatchInterval = 0.010f;
+
         /// <summary>
         /// The scene to switch to when offline.
         /// <para>Setting this makes the NetworkManager do scene management. This scene will be switched to when a network session is completed - such as a client disconnect, or a server shutdown.</para>
@@ -309,6 +316,9 @@ namespace Mirror
             }
 
             ConfigureServerFrameRate();
+
+            // batching
+            NetworkServer.batchInterval = serverBatchInterval;
 
             // Copy auto-disconnect settings to NetworkServer
             NetworkServer.disconnectInactiveTimeout = disconnectInactiveTimeout;
