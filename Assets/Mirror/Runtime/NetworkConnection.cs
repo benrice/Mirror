@@ -243,20 +243,26 @@ namespace Mirror
             // unpack message
             using (PooledNetworkReader reader = NetworkReaderPool.GetReader(buffer))
             {
-                if (MessagePacker.Unpack(reader, out int msgType))
+                // the other end might batch multiple messages into one packet.
+                // we need to try to unpack multiple times.
+                while (reader.Position < reader.Length)
                 {
-                    // try to invoke the handler for that message
-                    if (messageHandlers.TryGetValue(msgType, out NetworkMessageDelegate msgDelegate))
+                    if (MessagePacker.Unpack(reader, out int msgType))
                     {
-                        msgDelegate.Invoke(this, reader, channelId);
-                        lastMessageTime = Time.time;
+                        // try to invoke the handler for that message
+                        if (messageHandlers.TryGetValue(msgType, out NetworkMessageDelegate msgDelegate))
+                        {
+                            msgDelegate.Invoke(this, reader, channelId);
+                            lastMessageTime = Time.time;
+                        }
+                        else if (logger.LogEnabled()) logger.Log("Unknown message ID " + msgType + " " + this + ". May be due to no existing RegisterHandler for this message.");
                     }
-                    else if (logger.LogEnabled()) logger.Log("Unknown message ID " + msgType + " " + this + ". May be due to no existing RegisterHandler for this message.");
-                }
-                else
-                {
-                    logger.LogError("Closed connection: " + this + ". Invalid message header.");
-                    Disconnect();
+                    else
+                    {
+                        logger.LogError("Closed connection: " + this + ". Invalid message header.");
+                        Disconnect();
+                        break;
+                    }
                 }
             }
         }
